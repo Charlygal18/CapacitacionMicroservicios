@@ -7,12 +7,12 @@ import lombok.Data;
 @Data
 public class CardDto {
 	
-	public String customerNumber;
-	public String accountNumber;
-	public int productNumber;
-	public String productName;
-	public String status;
-	public BigDecimal balance;
+	private String customerNumber;
+	private String accountNumber;
+	private int productNumber;
+	private String productName;
+	private String status;
+	private BigDecimal balance;
 	
 	public CardDto(String customerNumber, String accountNumber, int productNumber, String productName, String status,
 			BigDecimal balance) {

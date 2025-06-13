@@ -6,9 +6,7 @@ import com.microservicios.curso.login.view.Credentials;
 
 public interface AuthenticationService {
 	
-	public Customer getCustomer(String customerNumber) throws Exception;
-	
-	public boolean Authenticate(Customer customer, Credentials credentials) throws Exception;
+	public String Authenticate(Credentials credentials);
 	
 	public boolean usuarioBloqueado(Customer customer) throws Exception;
 	

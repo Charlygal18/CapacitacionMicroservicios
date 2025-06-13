@@ -4,10 +4,11 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
-import com.microservicios.curso.account.dto.CardDto;
+
+import com.microservicios.curso.account.client.CardsClient;
+import com.microservicios.curso.account.dto.AccountDto;
+import com.microservicios.curso.account.exception.ForbiddenException;
 import com.microservicios.curso.account.model.Account;
 import com.microservicios.curso.account.model.AccountId;
 import com.microservicios.curso.account.repository.AccountRepository;
@@ -19,7 +20,13 @@ public class ServiceAccountImpl implements AccountService {
 	@Autowired
 	private AccountRepository accountRepository;
 
+	@Autowired
+	private CardsClient cardsClient;
+	
 	private final static String STATUS = "ACT";
+	
+	private Function<Account, AccountDto> accountMapper = account -> new AccountDto(account.getAccountNumber(), 
+			account.getProductNumber(), account.getProductName(), account.getBalance(), cardsClient.getCards(account.getAccountNumber()));
 	
 	@Override
 	public List<Account> getAccounts() {
@@ -35,35 +42,29 @@ public class ServiceAccountImpl implements AccountService {
 	@Override
 	public Account getAccount(AccountId accountId) {
 		
-		return accountRepository.findById(accountId).orElseThrow();
+		return accountRepository.findById(accountId)
+				.orElseThrow(() -> new ForbiddenException("You are no authorized"));
 	}
 
 	@Override
 	public List<Account> getAccountByCustomerNumber(String customerNumber) throws Exception {
 		
-		return accountRepository.findByCustomerNumber(customerNumber)
-				.filter(list -> !list.isEmpty())
-		        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
+		List<Account> cuentas = accountRepository.findByCustomerNumber(customerNumber)
+				.orElseThrow(() -> new ForbiddenException("You are no authorized"));
+		
+		return cuentas;
 		
 	}
 
 	@Override
-	public List<CardDto> getCardsByCustomerNumber(String customerNumber) throws Exception {
-	    List<Account> accounts = accountRepository.findByCustomerNumber(customerNumber)
-	            .filter(list -> !list.isEmpty())
-	            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
+	public List<AccountDto> getCustomerAccounts(String customerNumber) {
 
-	    List<CardDto> cards = accounts.stream()
-	        .map(card -> new CardDto(
-	        		card.getCustomerNumber(),
-	        		card.getAccountNumber(),
-	        		card.getProductNumber(),
-	        		card.getProductName(),
-	        		card.getStatus(),
-	        		card.getBalance()))
-	        .collect(Collectors.toList());
 
-	    return cards;
+		List<Account> accounts = accountRepository.findByCustomerNumber(customerNumber)
+				.orElseThrow(() -> new ForbiddenException("You are no authorized"));;
+		
+		return accounts.stream().map(accountMapper)
+				.collect(Collectors.toList());
 	}
 
 }
